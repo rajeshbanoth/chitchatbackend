@@ -1,0 +1,9 @@
+2024-07-21T03:55:50.747Z [31merror[39m: MongoDB connection error: querySrv ETIMEOUT _mongodb._tcp.cluster0.4ho5g.mongodb.net
+2024-07-22T03:21:11.007Z [31merror[39m: MongoDB connection error: querySrv ETIMEOUT _mongodb._tcp.cluster0.4ho5g.mongodb.net
+2024-08-20T15:07:20.960Z [31merror[39m: MongoDB connection error: querySrv ETIMEOUT _mongodb._tcp.cluster0.4ho5g.mongodb.net
+2024-08-20T15:07:44.836Z [31merror[39m: MongoDB connection error: querySrv ETIMEOUT _mongodb._tcp.cluster0.4ho5g.mongodb.net
+2024-08-20T15:07:51.334Z [31merror[39m: MongoDB connection error: querySrv ETIMEOUT _mongodb._tcp.cluster0.4ho5g.mongodb.net
+2024-08-20T15:07:58.207Z [31merror[39m: MongoDB connection error: querySrv ETIMEOUT _mongodb._tcp.cluster0.4ho5g.mongodb.net
+2024-08-20T15:08:12.049Z [31merror[39m: MongoDB connection error: querySrv ETIMEOUT _mongodb._tcp.cluster0.4ho5g.mongodb.net
+2024-08-24T17:09:00.418Z [31merror[39m: MongoDB connection error: querySrv ETIMEOUT _mongodb._tcp.cluster0.4ho5g.mongodb.net
+2024-09-08T18:17:04.122Z [31merror[39m: MongoDB connection error: querySrv ETIMEOUT _mongodb._tcp.cluster0.4ho5g.mongodb.net
