@@ -11,11 +11,13 @@ const {
   removeSenderFromList,
   getUserIdfomSocketId,
   deleteUserSocketId,
+  getUserIdFromSocketId,
 } = require("../redis/redis");
 const fs = require("fs");
 const path = require("path");
 const Message = require("../models/messageModel");
 const FileMetadata = require("../models/FileMetaDataModel");
+const DeletedMessage = require("../models/DeleteMessageModel");
 
 const handleRegister = async (socket, io, { userId }) => {
   try {
@@ -38,7 +40,7 @@ const handleRegister = async (socket, io, { userId }) => {
 
     const undeliveredMessageStatus = await getUndeliveredMessageStatus(userId);
     if (undeliveredMessageStatus.length > 0) {
-      io.to(socket.id).emit("receiveMessage", undeliveredMessageStatus);
+      // io.to(socket.id).emit("receiveMessage", undeliveredMessageStatus);
       await deleteUndeliveredMessageStatus(userId);
     }
   } catch (err) {
@@ -85,10 +87,9 @@ const handleSendMessage = async (io, msg) => {
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("receiveMessage", msg);
     } else {
-
       const newMessage = new Message(msg);
       await newMessage.save();
-     // await addSenderToList(receiverId, senderId);
+      // await addSenderToList(receiverId, senderId);
     }
   } catch (err) {
     console.error("Error in sendMessage event:", err);
@@ -252,7 +253,7 @@ const handleEndCall = async (chatId) => {
 const handleDisconnect = async (io, socket) => {
   try {
     console.log("A user disconnected:", socket.id, socket.user);
-    const user = await getUserIdfomSocketId(socket.id);
+    const user = await getUserIdFromSocketId(socket.id);
     await deleteUserSocketId(user);
     io.emit("user-disconnected", { userId: user });
   } catch (err) {
@@ -266,8 +267,15 @@ const chunkStorage = {};
 
 // Handle receiving and saving the thumbnail
 const handleThumbnail = async (io, socket, message) => {
-  const { messageId, chunk, chunkNumber, uniqueFileName, fileType, msg,encryptedAESKey } =
-    message;
+  const {
+    messageId,
+    chunk,
+    chunkNumber,
+    uniqueFileName,
+    fileType,
+    msg,
+    encryptedAESKey,
+  } = message;
 
   try {
     if (fileType === "thumbnail" && chunkNumber === 0) {
@@ -308,6 +316,17 @@ const handleThumbnail = async (io, socket, message) => {
   }
 };
 
+const handleTypingStatus =async(io,socket,message)=>{
+  const {chatId,status} = message;
+
+  const receiverSocketId = await getUserSocketId(chatId); 
+
+  if (receiverSocketId) {
+    io.to(receiverSocketId).emit("typingStatusRecieve", message);
+    console.log("Message sent to receiver.");
+  } 
+}
+
 // Handle receiving and saving the main file in chunks
 const handleReceiveFileChunk = async (io, socket, message) => {
   const {
@@ -320,7 +339,7 @@ const handleReceiveFileChunk = async (io, socket, message) => {
     senderId,
     receiverId,
     msg,
-    encryptedAESKey
+    encryptedAESKey,
   } = message;
 
   console.log(fileType, "fileType");
@@ -411,10 +430,10 @@ const handleReceiveFileChunk = async (io, socket, message) => {
       await fileMetaData.save();
       console.log("File metadata saved.");
 
-        // Prepare message for receiver
-        msg.isThumbnailDownloaded = 0;
-        msg.isOriginalAttachmentDownloaded = 0;
-        msg.aesKey = encryptedAESKey
+      // Prepare message for receiver
+      msg.isThumbnailDownloaded = 0;
+      msg.isOriginalAttachmentDownloaded = 0;
+      msg.aesKey = encryptedAESKey;
 
       // Notify the receiver about the new message
       const receiverSocketId = await getUserSocketId(receiverId);
@@ -439,6 +458,29 @@ const handleReceiveFileChunk = async (io, socket, message) => {
 const ensureDirectoryExists = (dir) => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
+  }
+};
+
+const handleDeleteMessageonBothSides = async (io, socket, msg) => {
+  console.log(msg, "sd");
+  const {id, senderId, receiverId, messageId } = msg;
+
+  const receiverSocketId = await getUserSocketId(receiverId);
+  if (receiverSocketId) {
+    socket.to(receiverSocketId).emit("DeleteMessageOnBothSides", msg);
+  } else {
+    console.log("Sender ID:", senderId);
+    console.log("Receiver ID:", receiverId); // Check if this is populated
+    console.log("Message ID:", messageId);
+    const deletedMessage = new DeletedMessage({
+      id,
+      senderId,
+      receiverId,
+      messageId,
+    });
+
+    // Save the deleted message to the database
+    await deletedMessage.save();
   }
 };
 
@@ -467,4 +509,6 @@ module.exports = {
   handleDisconnect,
   handleReceiveFileChunk,
   handleThumbnail,
+  handleDeleteMessageonBothSides,
+  handleTypingStatus
 };

@@ -8,6 +8,7 @@ const fileUpload = require('express-fileupload');
 
 // const userRoutes = require('./routes/userRoutes');
 const usersRoutes = require("./routes/usersRoute");
+const messageRoutes = require("./routes/messageRoutes");
 const bodyParser = require("body-parser");
 
 const socketHandler = require("./sockets/chat");
@@ -34,6 +35,9 @@ app.use(cors(corsOptions));
 
 // app.use('/api', userRoutes);
 app.use("/api", usersRoutes);
+app.use("/api",messageRoutes)
+
+
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // Route to fetch image by filename

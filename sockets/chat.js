@@ -328,6 +328,8 @@ const {
   handleReceiveFileChunk,
   handleReceiveThumbnail,
   handleThumbnail,
+  handleDeleteMessageonBothSides,
+  handleTypingStatus
 } = require("../socketEvents/SocketEvents");
 
 module.exports = (io) => {
@@ -351,11 +353,16 @@ module.exports = (io) => {
       handleBatchMessageStatusUpdate(io, statusUpdates)
     );
     socket.on("sendMessage", (msg) => handleSendMessage(io, msg));
+    socket.on("typingStatus", (msg) => handleTypingStatus(io,socket, msg));
     socket.on("resendMessage", (msg) => handleResendMessage(io, msg));
     socket.on("messageAcknowledge", (msg) =>
       handleMessageAcknowledge(io, msg)
     );
     socket.on("sendFileChunk", (msg) => handleReceiveFileChunk(io, socket, msg));
+
+    socket.on("DeleteMessageOnBothSides",(msg=>{
+      handleDeleteMessageonBothSides(io,socket,msg)
+    }))
      
     socket.on("sendThumbnail", (msg) => handleThumbnail(io, socket, msg));
     socket.on("sendFileThumbnail",(msg)=>handleReceiveThumbnail(io,msg))

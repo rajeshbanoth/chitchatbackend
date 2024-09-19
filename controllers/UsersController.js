@@ -13,7 +13,6 @@ const fixedOtp = process.env.FIXED_OTP;
 const normalizePhoneNumber = (number) => {
   try {
     // console.log(`Input number: ${number}`);
-
     // Parse the phone number
     const phoneNumber = parsePhoneNumberFromString(number, "IN"); // Specify default region if needed
 
@@ -35,7 +34,6 @@ const normalizePhoneNumber = (number) => {
 exports.sendOtp = async (req, res) => {
   const { phone_number } = req.body;
   console.log(phone_number);
-
   try {
     const otp = isTesting
       ? fixedOtp
@@ -56,7 +54,7 @@ exports.sendOtp = async (req, res) => {
 
 // Verify OTP and login/register user
 exports.verifyOtp = async (req, res) => {
-  const { phone_number, otp, device_type, device_info, ip_address, publicKey } =
+  const { phone_number, otp, device_type, device_info, ip_address, publicKey,deviceToken } =
     req.body;
 
   try {
@@ -83,7 +81,7 @@ exports.verifyOtp = async (req, res) => {
 
     if (!user) {
       // If the user does not exist, create a new user
-      user = new User({ phone_number, publicKey }); // Ensure this field is included in the User schema
+      user = new User({ phone_number, publicKey,deviceToken }); // Ensure this field is included in the User schema
       await user.save();
       console.log("New user created:", user);
     } else {

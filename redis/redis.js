@@ -214,7 +214,7 @@ const inMemoryStore = {
 };
 
 redisClient.on('error', (err) => {
-  console.error('Redis error:', err);
+  // console.error('Redis error:', err);
   isRedisAvailable = false; // Redis is unavailable
 });
 
