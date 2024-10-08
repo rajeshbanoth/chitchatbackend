@@ -37,6 +37,10 @@ app.use(cors(corsOptions));
 app.use("/api", usersRoutes);
 app.use("/api",messageRoutes)
 
+app.get("/",(req,res)=>{
+  res.send("server connected")
+})
+
 
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

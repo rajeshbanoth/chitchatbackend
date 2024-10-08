@@ -4,6 +4,7 @@ const DeletedMessage = require("../models/DeleteMessageModel");
 const path = require("path");
 const fs = require("fs");
 const mime = require("mime-types"); // Add this at the top of your file
+const sendNotification = require("../utils/Notification");
 
 exports.createMessage = async (req, res) => {
   try {
@@ -41,7 +42,7 @@ exports.createMessage = async (req, res) => {
 
 exports.getAndDeleteMessagesByReceiverId = async (req, res) => {
   try {
-    console.log(req.body, "saasda");
+ 
     const { receiverId } = req.body;
 
     // Fetch messages by receiverId
@@ -53,6 +54,17 @@ exports.getAndDeleteMessagesByReceiverId = async (req, res) => {
         .status(404)
         .json({ message: "No messages found for the given receiverId." });
     }
+
+        // Send individual notifications for each message
+        for (const message of messages) {
+          
+          const receiver = await User.findOne({ phone_number:  message.receiverId });
+          // Retrieve device token from the receiver
+          const deviceToken = receiver.deviceToken;
+          console.log("Receiver's Device Token:", deviceToken);
+      
+          await sendNotification(deviceToken, message.content, message.senderId);
+        }
 
     // Delete the fetched messages
     await Message.deleteMany({ receiverId });

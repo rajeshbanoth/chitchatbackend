@@ -18,6 +18,8 @@ const path = require("path");
 const Message = require("../models/messageModel");
 const FileMetadata = require("../models/FileMetaDataModel");
 const DeletedMessage = require("../models/DeleteMessageModel");
+const User = require("../models/usersModel");
+const sendNotification = require("../utils/Notification");
 
 const handleRegister = async (socket, io, { userId }) => {
   try {
@@ -83,6 +85,13 @@ const handleBatchMessageStatusUpdate = async (io, statusUpdates) => {
 const handleSendMessage = async (io, msg) => {
   const { id, senderId, receiverId } = msg;
   try {
+    const receiver = await User.findOne({ phone_number: receiverId });
+    // Retrieve device token from the receiver
+    const deviceToken = receiver.deviceToken;
+    console.log("Receiver's Device Token:", deviceToken);
+
+    await sendNotification(deviceToken, senderId, msg.content,msg);
+
     const receiverSocketId = await getUserSocketId(receiverId);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("receiveMessage", msg);
@@ -316,16 +325,16 @@ const handleThumbnail = async (io, socket, message) => {
   }
 };
 
-const handleTypingStatus =async(io,socket,message)=>{
-  const {chatId,status} = message;
+const handleTypingStatus = async (io, socket, message) => {
+  const { chatId, userId, status } = message;
 
-  const receiverSocketId = await getUserSocketId(chatId); 
+  const receiverSocketId = await getUserSocketId(chatId);
 
   if (receiverSocketId) {
     io.to(receiverSocketId).emit("typingStatusRecieve", message);
     console.log("Message sent to receiver.");
-  } 
-}
+  }
+};
 
 // Handle receiving and saving the main file in chunks
 const handleReceiveFileChunk = async (io, socket, message) => {
@@ -439,6 +448,12 @@ const handleReceiveFileChunk = async (io, socket, message) => {
       const receiverSocketId = await getUserSocketId(receiverId);
       console.log(`Receiver socket ID: ${receiverSocketId}`);
 
+      const receiver = await User.findOne({ phone_number: receiverId });
+      // Retrieve device token from the receiver
+      const deviceToken = receiver.deviceToken;
+      console.log("Receiver's Device Token:", deviceToken);
+      await sendNotification(deviceToken, senderId, "Recieved a media file");
+
       if (receiverSocketId) {
         io.to(receiverSocketId).emit("receiveMessage", msg);
         console.log("Message sent to receiver.");
@@ -463,7 +478,7 @@ const ensureDirectoryExists = (dir) => {
 
 const handleDeleteMessageonBothSides = async (io, socket, msg) => {
   console.log(msg, "sd");
-  const {id, senderId, receiverId, messageId } = msg;
+  const { id, senderId, receiverId, messageId } = msg;
 
   const receiverSocketId = await getUserSocketId(receiverId);
   if (receiverSocketId) {
@@ -510,5 +525,5 @@ module.exports = {
   handleReceiveFileChunk,
   handleThumbnail,
   handleDeleteMessageonBothSides,
-  handleTypingStatus
+  handleTypingStatus,
 };

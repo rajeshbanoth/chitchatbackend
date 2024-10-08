@@ -351,11 +351,11 @@ exports.updateProfilePictureAndBio1 = async (req, res) => {
     if (req.body.bio) {
       updateData.bio = req.body.bio.trim();
     }
-
     // Update username if provided in the request
     if (req.body.username) {
       updateData.name = req.body.username.trim();
     }
+    // updateData.profile_picture=phone_number
 
     // Update the user in the database with the new data
     const updatedUser = await User.findOneAndUpdate(
