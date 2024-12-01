@@ -41,8 +41,6 @@ app.get("/",(req,res)=>{
   res.send("server connected")
 })
 
-
-
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // Route to fetch image by filename
 
