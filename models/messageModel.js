@@ -137,6 +137,31 @@ const messageSchema = new mongoose.Schema({
         type: Boolean,
         default: false, // false means not downloaded, true means downloaded
     },
+    aesKey: {
+        type: String,
+        default: null,
+    },
+    ivKey: {
+        type: String,
+        default: null,
+    },
+    totalChunks: {
+        type: String,
+        default: null,
+    },
+    fileSize: {
+        type: String,
+        default: null,
+    },
+    sent: {
+        type: Number,
+        default: 0, // 0 for not sent, 1 for sent
+    },
+    received: {
+        type: Number,
+        default: 0, // 0 for not received, 1 for received
+    },
+
     
 });
 

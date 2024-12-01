@@ -84,21 +84,35 @@ const handleBatchMessageStatusUpdate = async (io, statusUpdates) => {
 
 const handleSendMessage = async (io, msg) => {
   const { id, senderId, receiverId } = msg;
+
   try {
     const receiver = await User.findOne({ phone_number: receiverId });
     // Retrieve device token from the receiver
     const deviceToken = receiver.deviceToken;
     console.log("Receiver's Device Token:", deviceToken);
 
-    await sendNotification(deviceToken, senderId, msg.content,msg);
+
 
     const receiverSocketId = await getUserSocketId(receiverId);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("receiveMessage", msg);
+      // const newMessage = new Message(msg);
+      // await newMessage.save();
     } else {
       const newMessage = new Message(msg);
       await newMessage.save();
-      // await addSenderToList(receiverId, senderId);
+          const result = await sendNotification(
+      deviceToken,
+      senderId,
+      msg.content,
+      msg
+    );
+    if (result) {
+      console.log("Notification sent successfully.");
+    } else {
+      console.log("Notification failed but continuing...");
+    }
+      
     }
   } catch (err) {
     console.error("Error in sendMessage event:", err);
@@ -112,6 +126,8 @@ const handleResendMessage = async (io, msg) => {
     const receiverSocketId = await getUserSocketId(receiverId);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("receiveMessage", msg);
+      const newMessage = new Message(msg);
+      await newMessage.save();
     }
   } catch (err) {
     console.error("Error in resendMessage event:", err);

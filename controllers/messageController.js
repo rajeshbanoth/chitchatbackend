@@ -116,7 +116,7 @@ exports.downloadMedia = async (req, res) => {
     res.on("finish", async () => {
       try {
         // Delete the file after it has been fully sent
-        await fs.promises.unlink(filePath);
+        // await fs.promises.unlink(filePath);
         console.log("File deleted:", filePath);
       } catch (deleteErr) {
         console.error("Error deleting file:", deleteErr);

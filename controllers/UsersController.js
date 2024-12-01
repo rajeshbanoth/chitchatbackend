@@ -54,9 +54,9 @@ exports.sendOtp = async (req, res) => {
 
 // Verify OTP and login/register user
 exports.verifyOtp = async (req, res) => {
+
   const { phone_number, otp, device_type, device_info, ip_address, publicKey,deviceToken } =
     req.body;
-
   try {
     let validOtp = false;
 
@@ -87,6 +87,7 @@ exports.verifyOtp = async (req, res) => {
     } else {
       // If the user already exists, update their public key
       user.publicKey = publicKey;
+      user.deviceToken = deviceToken;
       await user.save();
       console.log("User found and public key updated:", user);
     }
@@ -135,32 +136,32 @@ exports.getUserProfile = async (req, res) => {
   }
 };
 
-exports.updateUserProfile = async (req, res) => {
-  const userId = req.user.userId;
-  const updateData = req.body;
+// exports.updateUserProfile = async (req, res) => {
+//   const userId = req.user.userId;
+//   const updateData = req.body;
 
-  const immutableFields = ["phone_number", "created_at", "updated_at"];
+//   const immutableFields = ["phone_number", "created_at", "updated_at"];
 
-  try {
-    immutableFields.forEach((field) => {
-      if (updateData.hasOwnProperty(field)) {
-        delete updateData[field];
-      }
-    });
+//   try {
+//     immutableFields.forEach((field) => {
+//       if (updateData.hasOwnProperty(field)) {
+//         delete updateData[field];
+//       }
+//     });
 
-    if (updateData.hasOwnProperty("name") && !updateData.name.trim()) {
-      return res.status(400).json({ error: "Name cannot be empty." });
-    }
+//     if (updateData.hasOwnProperty("name") && !updateData.name.trim()) {
+//       return res.status(400).json({ error: "Name cannot be empty." });
+//     }
 
-    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
-      new: true,
-    });
+//     const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+//       new: true,
+//     });
 
-    res.status(200).json(updatedUser);
-  } catch (error) {
-    res.status(500).json({ error: "Error updating user profile." });
-  }
-};
+//     res.status(200).json(updatedUser);
+//   } catch (error) {
+//     res.status(500).json({ error: "Error updating user profile." });
+//   }
+// };
 
 exports.logoutUser = async (req, res) => {
   const userId = req.user.userId;
@@ -375,6 +376,8 @@ exports.updateProfilePictureAndBio1 = async (req, res) => {
 exports.updateProfilePictureAndBio = async (req, res) => {
   try {
     const phone_number = req.body.userId;
+
+    console.log("asdahshdkjah",phone_number)
 
     // Ensure user exists
     const user = await User.findOne({ phone_number });

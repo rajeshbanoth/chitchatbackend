@@ -11,7 +11,7 @@ const uploadDirectory = path.join(__dirname, "..", "uploads"); // Adjust path if
 router.post("/user/auth/send-otp", userController.sendOtp);
 router.post("/user/auth/verify-otp", userController.verifyOtp);
 router.post("/user/profile", userController.getUserProfile);
-router.put("/user/profile", authenticate, userController.updateUserProfile);
+// router.put("/user/profile", authenticate, userController.updateUserProfile);
 router.post("/user/logout", authenticate, userController.logoutUser);
 router.post("/user/checkContacts", userController.checkContacts);
 router.post("/user/publicKey", userController.getPublicKeyByPhoneNumber);
