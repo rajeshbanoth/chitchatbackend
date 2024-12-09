@@ -43,7 +43,7 @@ const handleRegister = async (socket, io, { userId }) => {
     const undeliveredMessageStatus = await getUndeliveredMessageStatus(userId);
     if (undeliveredMessageStatus.length > 0) {
       // io.to(socket.id).emit("receiveMessage", undeliveredMessageStatus);
-      await deleteUndeliveredMessageStatus(userId);
+      // await deleteUndeliveredMessageStatus(userId);
     }
   } catch (err) {
     console.error("Error in register event:", err);
@@ -91,28 +91,27 @@ const handleSendMessage = async (io, msg) => {
     const deviceToken = receiver.deviceToken;
     console.log("Receiver's Device Token:", deviceToken);
 
-
-
     const receiverSocketId = await getUserSocketId(receiverId);
     if (receiverSocketId) {
+      console.log("message receievd");
       io.to(receiverSocketId).emit("receiveMessage", msg);
+      console.log("message sent.....");
       // const newMessage = new Message(msg);
       // await newMessage.save();
     } else {
       const newMessage = new Message(msg);
       await newMessage.save();
-          const result = await sendNotification(
-      deviceToken,
-      senderId,
-      msg.content,
-      msg
-    );
-    if (result) {
-      console.log("Notification sent successfully.");
-    } else {
-      console.log("Notification failed but continuing...");
-    }
-      
+      const result = await sendNotification(
+        deviceToken,
+        senderId,
+        msg.content,
+        msg
+      );
+      if (result) {
+        console.log("Notification sent successfully.");
+      } else {
+        console.log("Notification failed but continuing...");
+      }
     }
   } catch (err) {
     console.error("Error in sendMessage event:", err);
@@ -138,7 +137,16 @@ const handleResendMessage = async (io, msg) => {
 
 const handleMessageAcknowledge = async (io, msg) => {
   const receiverSocketId = await getUserSocketId(msg.acknowledgeTo);
-  io.to(receiverSocketId).emit("messageAcknowledgementStatus", msg);
+  if (receiverSocketId) {
+    io.to(receiverSocketId).emit("messageAcknowledgementStatus", msg);
+  } else {
+    await createMessageAcknowledgement(
+      msg.message_id,
+      msg.acknowledgeTo,
+      msg.acknowledgeFrom,
+      msg.status
+    );
+  }
 };
 
 const handleSendFileChunk = async (io, msg) => {

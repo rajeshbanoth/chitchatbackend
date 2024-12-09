@@ -1,11 +1,12 @@
 const Message = require("../models/messageModel");
 const generateUniqueId = require("../utils/generateUniqueId");
 const DeletedMessage = require("../models/DeleteMessageModel");
+const MessageAcknowledgement = require("../models/MessageAcknowledgementModel"); // Adjust path as needed
 const path = require("path");
 const fs = require("fs");
 const mime = require("mime-types"); // Add this at the top of your file
 const sendNotification = require("../utils/Notification");
-
+const User = require("../models/usersModel");
 exports.createMessage = async (req, res) => {
   try {
     const {
@@ -42,7 +43,6 @@ exports.createMessage = async (req, res) => {
 
 exports.getAndDeleteMessagesByReceiverId = async (req, res) => {
   try {
- 
     const { receiverId } = req.body;
 
     // Fetch messages by receiverId
@@ -55,16 +55,27 @@ exports.getAndDeleteMessagesByReceiverId = async (req, res) => {
         .json({ message: "No messages found for the given receiverId." });
     }
 
-        // Send individual notifications for each message
-        for (const message of messages) {
-          
-          const receiver = await User.findOne({ phone_number:  message.receiverId });
-          // Retrieve device token from the receiver
-          const deviceToken = receiver.deviceToken;
-          console.log("Receiver's Device Token:", deviceToken);
-      
-          await sendNotification(deviceToken, message.content, message.senderId);
-        }
+    // Send individual notifications for each message
+    for (const message of messages) {
+      const receiver = await User.findOne({ phone_number: message.receiverId });
+      // Retrieve device token from the receiver
+      const deviceToken = receiver.deviceToken;
+      console.log("Receiver's Device Token:", deviceToken);
+
+      console.log("messaginggg", message);
+
+      const result = await sendNotification(
+        deviceToken,
+        message.senderId,
+        "Message Recieved",
+        null
+      );
+      if (result) {
+        console.log("Notification sent successfully.");
+      } else {
+        console.log("Notification failed but continuing...");
+      }
+    }
 
     // Delete the fetched messages
     await Message.deleteMany({ receiverId });
@@ -84,7 +95,15 @@ exports.downloadMedia = async (req, res) => {
   try {
     const { id, chatId, senderId, receiverId, fileName, fileType } = req.body;
 
-    console.log(id, chatId, senderId, receiverId, fileName, fileType, "newwwwww");
+    console.log(
+      id,
+      chatId,
+      senderId,
+      receiverId,
+      fileName,
+      fileType,
+      "newwwwww"
+    );
 
     // Get the absolute path to the file
     const filePath = path.resolve(
@@ -122,7 +141,6 @@ exports.downloadMedia = async (req, res) => {
         console.error("Error deleting file:", deleteErr);
       }
     });
-
   } catch (error) {
     console.error("Error downloading file:", error);
     res.status(500).json({ error: "Failed to download file." });
@@ -222,12 +240,55 @@ exports.getDeletedMessagesByReceiverId = async (req, res) => {
   }
 };
 
+
+
+
+exports.getAcknowledgementsAndDelete = async (req, res) => {
+  try {
+    const { userId } = req.body; // Get the user ID from request parameters
+
+    // Fetch all acknowledgments for the given userId
+    const acknowledgements = await MessageAcknowledgement.find({
+      acknowledgeTo: userId,
+    });
+
+    if (!acknowledgements || acknowledgements.length === 0) {
+      return res.status(404).json({
+        message: "No acknowledgments found for the given user.",
+      });
+    }
+
+    // Process the acknowledgments (e.g., sending success response)
+    // Example of processing (replace with actual logic if needed):
+    const successfullySent = acknowledgements.filter(
+      (ack) => ack.status === "acknowledged"
+    );
+
+    // // Delete successfully sent acknowledgments from the database
+    // const deleteResult = await MessageAcknowledgement.deleteMany({
+    //   _id: { $in: successfullySent.map((ack) => ack._id) },
+    // });
+
+    return res.status(200).json({
+      message: "Acknowledgments retrieved and successfully deleted.",
+      data: successfullySent,
+      deletedCount: deleteResult.deletedCount,
+    });
+  } catch (error) {
+    console.error("Error fetching or deleting acknowledgments:", error);
+    return res.status(500).json({
+      error: "Failed to process acknowledgments.",
+    });
+  }
+};
+
+
 // Function to delete a deleted message by id
 exports.deleteDeletedMessageById = async (req, res) => {
   try {
     const { id } = req.body;
 
-    console.log(req.body,"id")
+    console.log(req.body, "id");
 
     // Find and delete the deleted message by id
     const deletedMessage = await DeletedMessage.findOneAndDelete(id);

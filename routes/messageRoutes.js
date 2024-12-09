@@ -20,4 +20,6 @@ router.post(
   deletedMessageController.deleteDeletedMessageById
 );
 
+router.post("/message/acknowledgements",deletedMessageController.getAcknowledgementsAndDelete)
+
 module.exports = router;

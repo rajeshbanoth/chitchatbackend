@@ -1,5 +1,5 @@
 const admin = require("firebase-admin");
-const serviceAccount = require("../config/wink-efc45-firebase-adminsdk-wkeq0-65ce99851b"); // Path to your Firebase service account JSON
+const serviceAccount = require("../config/chitchat-16e2c-001c4ed46d03"); // Path to your Firebase service account JSON
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
