@@ -4,55 +4,55 @@ const userSchema = new mongoose.Schema({
   phone_number: {
     type: String,
     required: true,
-    unique: true, // Ensures phone number is unique
+    unique: true,
   },
   name: {
     type: String,
-    default: null, // User's display name
+    default: null,
   },
   profile_picture: {
     type: String,
-    default: null, // Path or URL to the user's profile picture
+    default: null,
   },
   profile_thumbnail: {
     type: String,
-    default: null, // Path or URL to the thumbnail of the profile picture
+    default: null,
   },
   bio: {
     type: String,
-    default: null, // User's bio
+    default: null,
   },
   status: {
     type: String,
-    default: "", // User's current status (e.g., "Available")
+    default: "",
   },
   created_at: {
     type: Date,
-    default: Date.now, // Timestamp when the account was created
+    default: Date.now,
   },
   updated_at: {
     type: Date,
-    default: Date.now, // Timestamp for the last update
+    default: Date.now,
   },
   last_seen: {
     type: Date,
-    default: null, // Timestamp for the user's last seen status
+    default: null,
   },
   is_online: {
     type: Boolean,
-    default: false, // Indicates if the user is currently online
+    default: false,
   },
   is_verified: {
     type: Boolean,
-    default: false, // Indicates if the user's account is verified
+    default: false,
   },
   device_token: {
     type: String,
-    required: true, // The current device token for push notifications
+    required: true,
   },
   device_token_last_updated: {
     type: Date,
-    default: null, // Timestamp when the device token was last updated
+    default: null,
   },
   device_token_history: {
     type: [
@@ -61,15 +61,15 @@ const userSchema = new mongoose.Schema({
         updated_at: Date,
       },
     ],
-    default: [], // Keeps track of all previous device tokens and update times
+    default: [],
   },
   publicKey: {
     type: String,
-    required: true, // User's public key for encryption/authentication
+    required: true,
   },
   public_key_last_updated: {
     type: Date,
-    default: null, // Timestamp when the public key was last updated
+    default: null,
   },
   public_key_history: {
     type: [
@@ -78,51 +78,59 @@ const userSchema = new mongoose.Schema({
         updated_at: Date,
       },
     ],
-    default: [], // Keeps track of all previous public keys and update times
+    default: [],
   },
   language: {
     type: String,
-    default: "en", // User's preferred language
+    default: "en",
   },
   timezone: {
     type: String,
-    default: "UTC", // User's timezone
+    default: "UTC",
   },
   email: {
     type: String,
-    default: null, // Optional email address for the user
+    default: null,
   },
   friends: {
     type: [String],
-    default: [], // List of phone numbers or user IDs for friends/contacts
+    default: [],
   },
   notifications_enabled: {
     type: Boolean,
-    default: true, // Whether notifications are enabled for the user
+    default: true,
   },
   theme: {
     type: String,
-    default: "light", // User's theme preference (light or dark)
+    default: "light",
   },
   two_factor_enabled: {
     type: Boolean,
-    default: false, // Indicates if two-factor authentication is enabled
+    default: false,
   },
   blocked_users: {
-    type: [String],
-    default: [], // List of user IDs or phone numbers of blocked users
+    type: [
+      {
+        user_id: String, // ID or phone number of the blocked user
+        blocked_at: {
+          type: Date,
+          default: Date.now, // Timestamp when the user was blocked
+        },
+      },
+    ],
+    default: [],
   },
   last_bio_updated: {
     type: Date,
-    default: null, // Timestamp when the bio was last updated
+    default: null,
   },
   last_public_key_updated: {
     type: Date,
-    default: null, // Timestamp when the public key was last updated
+    default: null,
   },
   last_profile_picture_updated: {
     type: Date,
-    default: null, // Timestamp when the profile picture was last updated
+    default: null,
   },
 });
 
@@ -132,7 +140,7 @@ userSchema.pre("save", function (next) {
   next();
 });
 
-// Middleware to track and save changes to `bio`, `profile_picture`, `publicKey`, and `device_token`
+// Middleware to track and save changes to specific fields
 userSchema.pre("save", function (next) {
   if (this.isModified("bio")) {
     this.last_bio_updated = new Date();
@@ -144,7 +152,6 @@ userSchema.pre("save", function (next) {
       updated_at: this.last_public_key_updated,
     });
   }
- 
   if (this.isModified("device_token")) {
     this.device_token_last_updated = new Date();
     this.device_token_history.push({

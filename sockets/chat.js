@@ -44,6 +44,8 @@ const {
   handleThumbnail,
   handleDeleteMessageonBothSides,
   handleTypingStatus,
+  handleRemoveFromBlockedCache,
+  handleAddToBlockedCache,
 } = require("../socketEvents/SocketEvents");
 const User = require("../models/usersModel");
 const FileMetadata = require("../models/FileMetaDataModel");
@@ -170,6 +172,14 @@ module.exports = (io) => {
     );
     socket.on("sendMessage", (msg) => handleSendMessage(io, msg));
     socket.on("typingStatus", (msg) => handleTypingStatus(io, socket, msg));
+
+    socket.on('removeFromBlockedCache', (msg)=>handleRemoveFromBlockedCache(io,socket,msg));
+    // Handle adding user to blocked list in cache
+    socket.on('blockUser', (msg) => {
+      handleAddToBlockedCache(io, socket, msg);
+    });
+
+
     socket.on("resendMessage", (msg) => handleResendMessage(io, msg));
     socket.on("messageAcknowledge", (msg) => handleMessageAcknowledge(io, msg));
     socket.on("sendFileChunk", (msg) =>

@@ -10,6 +10,9 @@ const { sendOtpToPhone } = require("../utils/sendOtp");
 const isTesting = process.env.NODE_ENV === "development";
 const fixedOtp = process.env.FIXED_OTP;
 
+const uploadDirectory = path.resolve(__dirname, "../uploads"); // Define your upload directory path
+
+
 const normalizePhoneNumber = (number) => {
   try {
     // console.log(`Input number: ${number}`);
@@ -122,10 +125,10 @@ exports.sendOtp = async (req, res) => {
 
 
 exports.verifyOtp = async (req, res) => {
-  const { phone_number, otp, device_type, device_info, ip_address, publicKey, deviceToken } = req.body;
+  const { phone_number, otp, device_type, device_info, ip_address, publicKey, device_token } = req.body;
 
 
-  console.log("deviceTOken",deviceToken)
+  console.log("deviceTOken",device_token)
   try {
     let validOtp = false;
 
@@ -152,13 +155,13 @@ exports.verifyOtp = async (req, res) => {
 
     if (!user) {
       // Create new user if not exists
-      user = new User({ phone_number, publicKey, deviceToken });
+      user = new User({ phone_number, publicKey, device_token });
       await user.save();
       console.log("New user created:", user);
     } else {
       // Update existing user
       user.publicKey = publicKey;
-      user.device_token = deviceToken;
+      user.device_token = device_token;
       user.updated_at = Date.now(); // Update the timestamp for tracking
       await user.save();
       console.log("User found and updated:", user);
@@ -849,4 +852,114 @@ exports.getUpdatedContacts = async (req, res) => {
     res.status(500).json({ error: "Error fetching updated contacts." });
   }
 };
+
+
+
+exports.deleteUserAccount = async (req, res) => {
+  console.log(req.params);
+
+  const { userId: phoneNumber } = req.params;
+
+  try {
+    // Step 1: Find the user by phone_number
+    console.log(`Attempting to find user with phone number: ${phoneNumber}`);
+    const user = await User.findOne({ phone_number: phoneNumber });
+    
+    if (!user) {
+      console.log(`User with phone number ${phoneNumber} not found`);
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    console.log(`User with phone number ${phoneNumber} found. Proceeding with deletion.`);
+
+    // Step 2: Delete user from the User collection
+    await User.deleteOne({ phone_number: phoneNumber });
+    console.log(`User with phone number ${phoneNumber} has been deleted successfully.`);
+
+    // Step 3: Send success response
+    res.status(200).json({
+      success: true,
+      message: `User with phone number ${phoneNumber} has been deleted successfully.`,
+    });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+
+
+
+exports.getProfileImage = async (req, res) => {
+  try {
+    const { filename } = req.params;
+    console.log(req.params, "params");
+    console.log(`Received request for image: ${filename}`);
+
+    // Validate the filename format: +<country_code><phone_number>_<timestamp>.<extension>
+    const filenamePattern = /^\+\d{1,4}\d{7,15}_\d+\.[a-zA-Z0-9]+$/; // E.g., +918897540734_1696543200.jpg
+    if (!filenamePattern.test(filename)) {
+      console.warn(`Invalid filename format: ${filename}`);
+      return res.status(400).json({ error: "Invalid filename format." });
+    }
+
+    // Extract phone number and timestamp from the filename (splitting based on _)
+    const [phone_number, timestampWithExtension] = filename.split("_");
+    const fileExtension = path.extname(filename);
+    const timestamp = timestampWithExtension.replace(fileExtension, ""); // Remove the extension from timestamp
+
+    // Ensure the user exists based on phone number
+    const user = await User.findOne({ phone_number });
+    if (!user) {
+      console.error(`User not found with phone number: ${phone_number}`);
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    // Validate and compare the timestamp
+    const parsedTimestamp = Number(timestamp); // Convert the timestamp to a number
+    if (isNaN(parsedTimestamp)) {
+      console.warn(`Invalid timestamp format in filename: ${filename}`);
+      return res.status(400).json({ error: "Invalid image timestamp format." });
+    }
+
+    if (parsedTimestamp !== user.last_profile_picture_updated.getTime()) {
+      console.warn(`Timestamp mismatch for user: ${phone_number}`);
+      return res.status(400).json({ error: "Invalid image timestamp." });
+    }
+
+    // Construct the file path based on the validated filename
+    const filePath = path.join(uploadDirectory, filename);
+
+    // Check if the file exists
+    if (!fs.existsSync(filePath)) {
+      console.error(`Image not found: ${filePath}`);
+      return res.status(404).json({ error: "Image not found." });
+    }
+
+    // Log that the image will be sent
+    console.log(`Sending image: ${filePath}`);
+
+    // Set caching headers for optimal performance
+    res.set({
+      "Cache-Control": "public, max-age=31536000, immutable", // Caching for 1 year
+    });
+
+    // Send the image file
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error("Error sending image:", err);
+        if (!res.headersSent) {
+          res.status(500).json({ error: "Error serving the image." });
+        }
+      } else {
+        console.log(`Successfully sent image: ${filename}`);
+      }
+    });
+  } catch (error) {
+    // Log any unexpected errors
+    console.error("Error fetching image:", error);
+    res.status(500).json({ error: "Failed to fetch image." });
+  }
+};
+
 
